@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# doas emaint sync -a
+
+doas emerge --update --exclude 'gentoo-sources' @world
+
+doas emerge @live-rebuild
+
+doas shutdown -h now
+
+# doas reboot

@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# Search for all files in the home directory
+files=$(find $HOME -type f -not -path '*/\.*')
+
+# Create an associative array to store filenames and their full paths
+declare -A filemap
+
+# Populate the filemap array
+while IFS= read -r line; do
+    # Use awk to get the base filename
+    filename=$(echo "$line" | awk -F/ '{print $NF}')
+    # Store the full path under the filename key
+    filemap["$filename"]=$line
+done <<< "$files"
+
+# Convert the keys of the filemap array (the filenames) to a string
+filenames=$(printf '%s\n' "${!filemap[@]}")
+
+# Use rofi to display a menu of the filenames
+selected=$(echo "$filenames" | rofi -dmenu -i -l 10)
+
+# Use the selected filename to get the full path from the filemap array
+fullpath=${filemap["$selected"]}
+
+# Open the selected file with xdg-open
+xdg-open "$fullpath"
