@@ -1,8 +1,8 @@
 #!/opt/homebrew/bin/bash
 
 [ "${1}" == "-i" ] && {
-    IPFS_MODE="true"
-    shift
+	IPFS_MODE="true"
+	shift
 } || IPFS_MODE="false"
 
 PURPLE='\e[1;95m' CYAN='\e[1;96m' WHITE='\e[1;97m'
@@ -51,8 +51,8 @@ BOOK_PAGE_CONTENT="$(curl -A "${USERAGENT}" -s "${FULL_URL}" -X "GET")"
 	printf "${RED}%s${NC}\n" "${IPFS_LINKS}"
 
 	[ -z "${IPFS_LINKS}" ] && { printf "There is no IPFS link for this selection.\n"; exit "0"; }
-	printf "${BLUE}%s{$NC}\n" "IPFS Links should be opened with a browser.\n" "${BLUE}" "${NC}"
-	printf "${BLUE}%s{$NC}\n" "Pinata is recommended."
+	printf "${BLUE}%s\n${NC}\n" "IPFS Links should be opened with a browser."
+	printf "${BLUE}%s\n${NC}\n" "You may need to dry a few times."
 	exit "0"
 }
 
@@ -84,18 +84,12 @@ for ((attempt=1; attempt<=MAX_RETRIES; attempt++)); do
 	curl -X "GET" -A "${USERAGENT}" -o "${FILENAME}" "${DOWNLOAD_LINK}"
 
 	pdfinfo "${FILENAME}" > "/dev/null" 2>&1 && {
-	    printf "${GREEN}Download successful.%s\n${NC}"
-	    break
+		printf "${GREEN}Download successful.%s\n${NC}"
+		break
 	} || {
-	    printf "${RED}Download failed, retrying in ${BLUE}%d seconds...${NC}\n" "${RETRY_DELAY}"
-	    sleep "${RETRY_DELAY}"
+		printf "${RED}Download failed, retrying in ${BLUE}%d seconds...${NC}\n" "${RETRY_DELAY}"
+		sleep "${RETRY_DELAY}"
 	}
 done
 
 pdfinfo "${FILENAME}" > "/dev/null" 2>&1 || printf "Download failed after %d attempts.\n" "${MAX_RETRIES}"
-
-# zathura --mode fullscreen "${FILENAME}"
-
-pdfinfo "${FILENAME}" > "/dev/null" 2>&1 || echo "Download failed after ${MAX_RETRIES} attempts."
-
-# zathura --mode fullscreen "${FILENAME}"
