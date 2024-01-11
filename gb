@@ -98,4 +98,4 @@ printf "${WHITE}Your file is ready: ${RED}%s" "$(find . -type f -name "${FILENAM
 
 pdfinfo "${FILENAME}" > "/dev/null" 2>&1 || printf "Download failed after %d attempts.\n" "${MAX_RETRIES}"
 
-printf "${WHITE}Your file is ready: ${RED}%s" "$(find . -type f -name "${FILENAME}")"
+printf "${WHITE}Your file is ready: ${RED}%s\n" "$(find . -type f -name "${FILENAME}")"
