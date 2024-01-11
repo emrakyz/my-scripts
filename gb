@@ -52,7 +52,7 @@ BOOK_PAGE_CONTENT="$(curl -fSLk -A "${USERAGENT}" -s "${FULL_URL}" -X "GET")"
 
 	[ -z "${IPFS_LINKS}" ] && { printf "There is no IPFS link for this selection.\n"; exit "0"; }
 	printf "${BLUE}%s\n${NC}\n" "IPFS Links should be opened with a browser."
-	printf "${BLUE}%s\n${NC}\n" "You may need to dry a few times."
+	printf "${BLUE}%s\n${NC}\n" "You may need to try a few times."
 	exit "0"
 }
 
