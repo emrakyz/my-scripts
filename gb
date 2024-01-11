@@ -16,7 +16,7 @@ QUERY="${FQUERY%+}"
 
 URL="https://annas-archive.org/search?index=&q=${QUERY}&content=book_nonfiction&content=book_fiction&content=book_unknown&ext=pdf&acc=external_download&src=lgli&src=lgrs&sort=&lang=en&lang=_empty"
 
-RESULTS="$(curl -fSL -A "${USERAGENT}" -s "${URL}" -X "GET" |
+RESULTS="$(curl -fSLk -A "${USERAGENT}" -s "${URL}" -X "GET" |
 	sed '/partial matches/,$d')"
 
 IFS=$'\n' read -r -d '' -a TITLES < <(printf "%s" "${RESULTS}" | ggrep -oP '(?<=<h3 class="max-lg:line-clamp-\[2\] lg:truncate leading-\[1.2\] lg:leading-\[1.35\] text-md lg:text-xl font-bold">)[^<]*' | head -n 25)
@@ -44,7 +44,7 @@ CHOSEN_URL="${URLS[SELECTED_BOOK - 1]}"
 
 FULL_URL="https://annas-archive.org${CHOSEN_URL}"
 
-BOOK_PAGE_CONTENT="$(curl -fSL -A "${USERAGENT}" -s "${FULL_URL}" -X "GET")"
+BOOK_PAGE_CONTENT="$(curl -fSLk -A "${USERAGENT}" -s "${FULL_URL}" -X "GET")"
 
 "${IPFS_MODE}" && {
 	IPFS_LINKS="$(printf "%s" "${BOOK_PAGE_CONTENT}" | ggrep -oP "(?<=<a href=')[^']*ipfs[^']*")"
@@ -59,8 +59,8 @@ BOOK_PAGE_CONTENT="$(curl -fSL -A "${USERAGENT}" -s "${FULL_URL}" -X "GET")"
 LIBGEN_RS_LINK="$(printf "%s" "${BOOK_PAGE_CONTENT}" | ggrep -oP "(?<=<a href=')[^']*library\.lol[^']*")"
 LIBGEN_LI_LINK="$(printf "%s" "${BOOK_PAGE_CONTENT}" | ggrep -oP "(?<=<a href=')[^']*libgen\.li[^']*")"
 
-LIBGENLI_PAGE_CONTENT="$(curl -fSL -A "${USERAGENT}" -s "${LIBGEN_LI_LINK}" -X "GET")"
-LIBGENRS_PAGE_CONTENT="$(curl -fSL -A "${USERAGENT}" -s "${LIBGEN_RS_LINK}" -X "GET")"
+LIBGENLI_PAGE_CONTENT="$(curl -fSLk -A "${USERAGENT}" -s "${LIBGEN_LI_LINK}" -X "GET")"
+LIBGENRS_PAGE_CONTENT="$(curl -fSLk -A "${USERAGENT}" -s "${LIBGEN_RS_LINK}" -X "GET")"
 
 DOWNLOAD_LINK_LI="$(printf "%s" "${LIBGENLI_PAGE_CONTENT}" | ggrep -o 'https://cdn[0-9]*\.booksdl\.org[^"]*')"
 DOWNLOAD_LINK_RS="$(printf "%s" "${LIBGENRS_PAGE_CONTENT}" | ggrep -o 'https://download.library.lol/.*.pdf')"
@@ -81,7 +81,7 @@ for ((attempt=1; attempt<=MAX_RETRIES; attempt++)); do
 
 	printf "${GREEN}Attempt ${RED}%d ${GREEN}of ${RED}%d${NC}\n" "${attempt}" "${MAX_RETRIES}"
 
-	curl -fSL -X "GET" -A "${USERAGENT}" -o "${FILENAME}" "${DOWNLOAD_LINK}"
+	curl -fSLk -X "GET" -A "${USERAGENT}" -o "${FILENAME}" "${DOWNLOAD_LINK}"
 
 	pdfinfo "${FILENAME}" > "/dev/null" 2>&1 && {
 		printf "${GREEN}Download successful.%s\n${NC}"
@@ -91,6 +91,10 @@ for ((attempt=1; attempt<=MAX_RETRIES; attempt++)); do
 		sleep "${RETRY_DELAY}"
 	}
 done
+
+pdfinfo "${FILENAME}" > "/dev/null" 2>&1 || printf "Download failed after %d attempts.\n" "${MAX_RETRIES}"
+
+printf "${WHITE}Your file is ready: ${RED}%s" "$(find . -type f -name "${FILENAME}")"
 
 pdfinfo "${FILENAME}" > "/dev/null" 2>&1 || printf "Download failed after %d attempts.\n" "${MAX_RETRIES}"
 
