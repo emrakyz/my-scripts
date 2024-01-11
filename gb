@@ -14,6 +14,9 @@ USERAGENT="Mozilla/5.0 (Windows NT 10.0; rv:121.0) Gecko/20100101 Firefox/121.0"
 FQUERY="$(printf "%s+" "${@}")"
 QUERY="${FQUERY%+}"
 
+FILENAME="${QUERY//+/_}"
+FILENAME="${FILENAME,,}.pdf"
+
 URL="https://annas-archive.org/search?index=&q=${QUERY}&content=book_nonfiction&content=book_fiction&content=book_unknown&ext=pdf&acc=external_download&src=lgli&src=lgrs&sort=&lang=en&lang=_empty"
 
 RESULTS="$(curl -fSLk -A "${USERAGENT}" -s "${URL}" -X "GET" |
@@ -44,29 +47,29 @@ CHOSEN_URL="${URLS[SELECTED_BOOK - 1]}"
 
 FULL_URL="https://annas-archive.org${CHOSEN_URL}"
 
-BOOK_PAGE_CONTENT="$(curl -fSLk -A "${USERAGENT}" -s "${FULL_URL}" -X "GET")"
+BOOK_PAGE_CONTENT="$(curl -fk -A "${USERAGENT}" -sSL "${FULL_URL}" -X "GET")"
 
 "${IPFS_MODE}" && {
 	IPFS_LINKS="$(printf "%s" "${BOOK_PAGE_CONTENT}" | ggrep -oP "(?<=<a href=')[^']*ipfs[^']*")"
-	printf "${RED}%s${NC}\n" "${IPFS_LINKS}"
+	IPFS_DOWN="$(printf "%s" "${IPFS_LINKS}" | ggrep -o "ipfs.io[^']*")"
 
 	[ -z "${IPFS_LINKS}" ] && { printf "There is no IPFS link for this selection.\n"; exit "0"; }
+
+	curl -fSLk -X "GET" -A "${USERAGENT}" -o "${FILENAME}" "${IPFS_DOWN}" || { printf "${RED}%s${NC}\n" "${IPFS_LINKS}"
+
 	printf "${BLUE}%s\n${NC}\n" "IPFS Links should be opened with a browser."
 	printf "${BLUE}%s\n${NC}\n" "You may need to try a few times."
-	exit "0"
+	exit "0"; }
 }
 
 LIBGEN_RS_LINK="$(printf "%s" "${BOOK_PAGE_CONTENT}" | ggrep -oP "(?<=<a href=')[^']*library\.lol[^']*")"
 LIBGEN_LI_LINK="$(printf "%s" "${BOOK_PAGE_CONTENT}" | ggrep -oP "(?<=<a href=')[^']*libgen\.li[^']*")"
 
-LIBGENLI_PAGE_CONTENT="$(curl -fSLk -A "${USERAGENT}" -s "${LIBGEN_LI_LINK}" -X "GET")"
-LIBGENRS_PAGE_CONTENT="$(curl -fSLk -A "${USERAGENT}" -s "${LIBGEN_RS_LINK}" -X "GET")"
+LIBGENLI_PAGE_CONTENT="$(curl -fk -A "${USERAGENT}" -sSL "${LIBGEN_LI_LINK}" -X "GET")"
+LIBGENRS_PAGE_CONTENT="$(curl -fk -A "${USERAGENT}" -sSL "${LIBGEN_RS_LINK}" -X "GET")"
 
 DOWNLOAD_LINK_LI="$(printf "%s" "${LIBGENLI_PAGE_CONTENT}" | ggrep -o 'https://cdn[0-9]*\.booksdl\.org[^"]*')"
 DOWNLOAD_LINK_RS="$(printf "%s" "${LIBGENRS_PAGE_CONTENT}" | ggrep -o 'https://download.library.lol/.*.pdf')"
-
-FILENAME="${QUERY//+/_}"
-FILENAME="${FILENAME,,}.pdf"
 
 DOWNLOAD_LINK_LI="${DOWNLOAD_LINK_LI//\\/\/}"
 DOWNLOAD_LINK_RS="${DOWNLOAD_LINK_RS//\\/\/}"
@@ -91,10 +94,6 @@ for ((attempt=1; attempt<=MAX_RETRIES; attempt++)); do
 		sleep "${RETRY_DELAY}"
 	}
 done
-
-pdfinfo "${FILENAME}" > "/dev/null" 2>&1 || printf "Download failed after %d attempts.\n" "${MAX_RETRIES}"
-
-printf "${WHITE}Your file is ready: ${RED}%s" "$(find . -type f -name "${FILENAME}")"
 
 pdfinfo "${FILENAME}" > "/dev/null" 2>&1 || printf "Download failed after %d attempts.\n" "${MAX_RETRIES}"
 
