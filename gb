@@ -19,12 +19,12 @@ URL="https://annas-archive.org/search?index=&q=${QUERY}&content=book_nonfiction&
 RESULTS="$(curl -A "${USERAGENT}" -s "${URL}" -X "GET" |
 	sed '/partial matches/,$d')"
 
-IFS=$'\n' read -r -d '' -a TITLES < <(echo "${RESULTS}" | grep -oP '(?<=<h3 class="max-lg:line-clamp-\[2\] lg:truncate leading-\[1.2\] lg:leading-\[1.35\] text-md lg:text-xl font-bold">)[^<]*' | head -n 25)
-IFS=$'\n' read -r -d '' -a AUTHORS < <(echo "${RESULTS}" | grep -oP '(?<=<div class="max-lg:line-clamp-\[2\] lg:truncate leading-\[1.2\] lg:leading-\[1.35\] max-lg:text-sm italic">)[^<]*' | head -n 25)
-IFS=$'\n' read -r -d '' -a PUBLISHERS < <(echo "${RESULTS}" | grep -oP '(?<=<div class="truncate leading-\[1.2\] lg:leading-\[1.35\] max-lg:text-xs">)[^<]*' | head -n 25)
+IFS=$'\n' read -r -d '' -a TITLES < <(echo "${RESULTS}" | ggrep -oP '(?<=<h3 class="max-lg:line-clamp-\[2\] lg:truncate leading-\[1.2\] lg:leading-\[1.35\] text-md lg:text-xl font-bold">)[^<]*' | head -n 25)
+IFS=$'\n' read -r -d '' -a AUTHORS < <(echo "${RESULTS}" | ggrep -oP '(?<=<div class="max-lg:line-clamp-\[2\] lg:truncate leading-\[1.2\] lg:leading-\[1.35\] max-lg:text-sm italic">)[^<]*' | head -n 25)
+IFS=$'\n' read -r -d '' -a PUBLISHERS < <(echo "${RESULTS}" | ggrep -oP '(?<=<div class="truncate leading-\[1.2\] lg:leading-\[1.35\] max-lg:text-xs">)[^<]*' | head -n 25)
 
-IFS=$'\n' read -r -d '' -a URLS < <(echo "${RESULTS}" | grep -oP 'href="\K/md5/[^"]*' | head -n 25)
-IFS=$'\n' read -r -d '' -a SIZES < <(echo "${RESULTS}" | grep -oP '(?<=pdf, )\d+(\.\d+)?MB' | head -n 25)
+IFS=$'\n' read -r -d '' -a URLS < <(echo "${RESULTS}" | ggrep -oP 'href="\K/md5/[^"]*' | head -n 25)
+IFS=$'\n' read -r -d '' -a SIZES < <(echo "${RESULTS}" | ggrep -oP '(?<=pdf, )\d+(\.\d+)?MB' | head -n 25)
 
 for i in "${!TITLES[@]}"; do
 	TITLE="${TITLES[i]}"
@@ -48,7 +48,7 @@ FULL_URL="https://annas-archive.org${CHOSEN_URL}"
 BOOK_PAGE_CONTENT="$(curl -A "${USERAGENT}" -s "${FULL_URL}" -X "GET")"
 
 "${IPFS_MODE}" && {
-	IPFS_LINKS="$(echo "${BOOK_PAGE_CONTENT}" | grep -oP "(?<=<a href=')[^']*ipfs[^']*")"
+	IPFS_LINKS="$(echo "${BOOK_PAGE_CONTENT}" | ggrep -oP "(?<=<a href=')[^']*ipfs[^']*")"
 	echo -e "${RED}${IPFS_LINKS}${NC}"
 
 	[ -z "${IPFS_LINKS}" ] && { echo "There is no IPFS link for this selection."; exit "0"; }
@@ -57,14 +57,14 @@ BOOK_PAGE_CONTENT="$(curl -A "${USERAGENT}" -s "${FULL_URL}" -X "GET")"
 	exit "0"
 }
 
-LIBGEN_RS_LINK="$(echo "${BOOK_PAGE_CONTENT}" | grep -oP "(?<=<a href=')[^']*library\.lol[^']*")"
-LIBGEN_LI_LINK="$(echo "${BOOK_PAGE_CONTENT}" | grep -oP "(?<=<a href=')[^']*libgen\.li[^']*")"
+LIBGEN_RS_LINK="$(echo "${BOOK_PAGE_CONTENT}" | ggrep -oP "(?<=<a href=')[^']*library\.lol[^']*")"
+LIBGEN_LI_LINK="$(echo "${BOOK_PAGE_CONTENT}" | ggrep -oP "(?<=<a href=')[^']*libgen\.li[^']*")"
 
 LIBGENLI_PAGE_CONTENT="$(curl -A "${USERAGENT}" -s "${LIBGEN_LI_LINK}" -X "GET")"
 LIBGENRS_PAGE_CONTENT="$(curl -A "${USERAGENT}" -s "${LIBGEN_RS_LINK}" -X "GET")"
 
-DOWNLOAD_LINK_LI="$(echo "${LIBGENLI_PAGE_CONTENT}" | grep -o 'https://cdn[0-9]*\.booksdl\.org[^"]*')"
-DOWNLOAD_LINK_RS="$(echo "${LIBGENRS_PAGE_CONTENT}" | grep -o 'https://download.library.lol/.*.pdf')"
+DOWNLOAD_LINK_LI="$(echo "${LIBGENLI_PAGE_CONTENT}" | ggrep -o 'https://cdn[0-9]*\.booksdl\.org[^"]*')"
+DOWNLOAD_LINK_RS="$(echo "${LIBGENRS_PAGE_CONTENT}" | ggrep -o 'https://download.library.lol/.*.pdf')"
 
 FILENAME="${QUERY//+/_}"
 FILENAME="${FILENAME,,}.pdf"
